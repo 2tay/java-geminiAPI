@@ -1,0 +1,9 @@
+# Ignore .class files
+*.class
+
+# Ignore .idea and .vscode folders (IDE specific)
+.idea/
+.vscode/
+
+# Ignore .DS_Store files (macOS specific)
+.DS_Store
