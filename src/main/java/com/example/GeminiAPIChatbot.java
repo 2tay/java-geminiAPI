@@ -12,7 +12,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.Scanner;
 
-public class OpenAIChatbot {
+public class GeminiAPIChatbot {
     public static void main(String[] args) {
         // Replace with your actual Gemini API key
         String apiKey = "AIzaSyDFnl4KzLfRJRuwaoeBlEbJLTrkyM_PTUs";
@@ -42,7 +42,7 @@ public class OpenAIChatbot {
                 // Send the request and get the response
                 try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
                     String responseBody = EntityUtils.toString(response.getEntity());
-                    
+
                     // Parse the JSON response and extract the text
                     JSONObject jsonResponse = new JSONObject(responseBody);
                     JSONArray candidates = jsonResponse.getJSONArray("candidates");
