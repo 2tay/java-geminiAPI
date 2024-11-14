@@ -20,6 +20,9 @@ public class GeminiAPIChatbot {
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             Scanner scanner = new Scanner(System.in);
 
+            // StringBuilder to store conversation history
+            StringBuilder conversationHistory = new StringBuilder();
+
             while (true) {
                 // Get user input
                 System.out.print("Enter your question: ");
@@ -31,12 +34,15 @@ public class GeminiAPIChatbot {
                     break;
                 }
 
+                // Append the user question to the conversation history
+                conversationHistory.append("User: ").append(question).append("\n");
+
                 // Create HTTP POST request to Gemini API
                 HttpPost httpPost = new HttpPost("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" + apiKey);
                 httpPost.setHeader("Content-Type", "application/json");
 
-                // Prepare request body for Gemini API
-                String requestBody = "{\"contents\": [{\"parts\": [{\"text\": \"" + question + "\"}]}]}";
+                // Send the entire conversation history as part of the request
+                String requestBody = "{\"contents\": [{\"parts\": [{\"text\": \"" + conversationHistory.toString() + "\"}]}]}";
                 httpPost.setEntity(new StringEntity(requestBody));
 
                 // Send the request and get the response
@@ -51,8 +57,11 @@ public class GeminiAPIChatbot {
                     JSONArray parts = content.getJSONArray("parts");
                     String responseText = parts.getJSONObject(0).getString("text");
 
-                    // Print the extracted text (only the response text)
-                    System.out.println(responseText);
+                    // Append the bot's response to the conversation history
+                    conversationHistory.append("Bot: ").append(responseText).append("\n");
+
+                    // Print the bot's response
+                    System.out.println("Bot: " + responseText);
                 } catch (IOException e) {
                     e.printStackTrace();
                     System.out.println("An error occurred while processing the response.");
