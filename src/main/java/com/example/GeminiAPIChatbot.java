@@ -9,16 +9,31 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
 
+import javax.swing.JFileChooser;
+
 public class GeminiAPIChatbot {
+    private static Scanner scanner = new Scanner(System.in);
     public static void main(String[] args) {
         // Replace with your actual Gemini API key
         String apiKey = "AIzaSyDFnl4KzLfRJRuwaoeBlEbJLTrkyM_PTUs";
 
+        System.out.println("Upload Pdf file:");
+        String selectedPdfPath = selectPdfFile();
+
+        if (selectedPdfPath == null) {
+            System.out.println("No file selected. Exiting...");
+            return;
+        }
+
+        System.out.println("Selected file: " + selectedPdfPath);
+        
+
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            Scanner scanner = new Scanner(System.in);
+            
 
             // StringBuilder to store conversation history
             StringBuilder conversationHistory = new StringBuilder();
@@ -73,5 +88,31 @@ public class GeminiAPIChatbot {
             e.printStackTrace();
             System.out.println("An error occurred with the HTTP client.");
         }
+    }
+
+    private static String selectPdfFile() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select a PDF file");
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+
+        // Filter to show only PDF files
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
+            @Override
+            public boolean accept(File f) {
+                return f.isDirectory() || f.getName().toLowerCase().endsWith(".pdf");
+            }
+
+            @Override
+            public String getDescription() {
+                return "PDF Files (*.pdf)";
+            }
+        });
+
+        int result = fileChooser.showOpenDialog(null);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            return fileChooser.getSelectedFile().getAbsolutePath();
+        }
+
+        return null;
     }
 }
