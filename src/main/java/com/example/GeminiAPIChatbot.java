@@ -9,32 +9,36 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.File;
+import com.example.helper.GeneralHelper;
+
 import java.io.IOException;
 import java.util.Scanner;
 
-import javax.swing.JFileChooser;
 
 public class GeminiAPIChatbot {
+
     private static Scanner scanner = new Scanner(System.in);
+
     public static void main(String[] args) {
         // Replace with your actual Gemini API key
         String apiKey = "AIzaSyDFnl4KzLfRJRuwaoeBlEbJLTrkyM_PTUs";
 
         System.out.println("Upload Pdf file:");
-        String selectedPdfPath = selectPdfFile();
-
+        String selectedPdfPath = GeneralHelper.selectPdfFile();
         if (selectedPdfPath == null) {
             System.out.println("No file selected. Exiting...");
             return;
         }
-
         System.out.println("Selected file: " + selectedPdfPath);
         
+        String pdfContent = GeneralHelper.extractTextFromPdf(selectedPdfPath);
+        if(pdfContent == null) {
+            System.out.println("Failed to extract content from the PDF. Exiting...");
+            return;
+        }
+        System.out.println("PDF content loaded successfully.");
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            
-
             // StringBuilder to store conversation history
             StringBuilder conversationHistory = new StringBuilder();
 
@@ -51,13 +55,19 @@ public class GeminiAPIChatbot {
 
                 // Append the user question to the conversation history
                 conversationHistory.append("User: ").append(question).append("\n");
+                
+                // Include the PDF content in the prompt
+                String prompt = "You are an AI assistant. Answer the following question only using the context provided from the PDF. If the question is outside the scope of the PDF content, respond with 'Sorry, I can't answer that.'\n\n" 
+                                + "PDF Context:\n" + pdfContent + "\n\n"
+                                + conversationHistory.toString() + "\n\n"
+                                + "Question: " + question;
 
                 // Create HTTP POST request to Gemini API
                 HttpPost httpPost = new HttpPost("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" + apiKey);
                 httpPost.setHeader("Content-Type", "application/json");
 
                 // Send the entire conversation history as part of the request
-                String requestBody = "{\"contents\": [{\"parts\": [{\"text\": \"" + conversationHistory.toString() + "\"}]}]}";
+                String requestBody = "{\"contents\": [{\"parts\": [{\"text\": \"" + prompt + "\"}]}]}";
                 httpPost.setEntity(new StringEntity(requestBody));
 
                 // Send the request and get the response
@@ -66,6 +76,12 @@ public class GeminiAPIChatbot {
 
                     // Parse the JSON response and extract the text
                     JSONObject jsonResponse = new JSONObject(responseBody);
+
+                    if (!jsonResponse.has("candidates") || jsonResponse.getJSONArray("candidates").isEmpty()) {
+                        System.out.println("Error: No candidates returned by the API.");
+                        continue;
+                    }
+                    
                     JSONArray candidates = jsonResponse.getJSONArray("candidates");
                     JSONObject candidate = candidates.getJSONObject(0);
                     JSONObject content = candidate.getJSONObject("content");
@@ -90,29 +106,4 @@ public class GeminiAPIChatbot {
         }
     }
 
-    private static String selectPdfFile() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Select a PDF file");
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-
-        // Filter to show only PDF files
-        fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
-            @Override
-            public boolean accept(File f) {
-                return f.isDirectory() || f.getName().toLowerCase().endsWith(".pdf");
-            }
-
-            @Override
-            public String getDescription() {
-                return "PDF Files (*.pdf)";
-            }
-        });
-
-        int result = fileChooser.showOpenDialog(null);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            return fileChooser.getSelectedFile().getAbsolutePath();
-        }
-
-        return null;
-    }
 }
